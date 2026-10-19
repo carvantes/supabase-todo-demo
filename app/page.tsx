@@ -138,7 +138,7 @@ export default function Home() {
 
   return (
     <main className="container">
-      <h1>Todos</h1>
+      <h1>Todos (beta)</h1>
       <p className="subtitle">
         Signed in anonymously. These todos are private to your session and
         enforced by Row Level Security.

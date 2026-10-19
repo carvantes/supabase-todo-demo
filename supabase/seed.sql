@@ -1,0 +1,2 @@
+-- Intentionally empty.
+-- Add non-sensitive sample rows here when preview branches need seeded data.

@@ -3,21 +3,33 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
+type Priority = "low" | "medium" | "high";
+
+const PRIORITIES: readonly Priority[] = ["low", "medium", "high"];
+const PRIORITY_LABELS: Record<Priority, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+};
+const DEFAULT_PRIORITY: Priority = "medium";
+
 type Todo = {
   id: string;
   user_id: string;
   title: string;
   is_complete: boolean;
+  priority: Priority;
   created_at: string;
 };
 
-const TODO_COLUMNS = "id, user_id, title, is_complete, created_at";
+const TODO_COLUMNS = "id, user_id, title, is_complete, priority, created_at";
 
 export default function Home() {
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [title, setTitle] = useState("");
+  const [priority, setPriority] = useState<Priority>(DEFAULT_PRIORITY);
   const [adding, setAdding] = useState(false);
   const [pendingIds, setPendingIds] = useState<Record<string, boolean>>({});
 
@@ -86,13 +98,14 @@ export default function Home() {
 
       const { data, error: insertError } = await supabase
         .from("todos")
-        .insert({ title: trimmed, user_id: userId })
+        .insert({ title: trimmed, user_id: userId, priority })
         .select(TODO_COLUMNS)
         .single();
       if (insertError) throw new Error(insertError.message);
 
       setTodos((prev) => (data ? [data, ...prev] : prev));
       setTitle("");
+      setPriority(DEFAULT_PRIORITY);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to add todo.");
     } finally {
@@ -114,6 +127,26 @@ export default function Home() {
       setTodos((prev) => prev.map((t) => (t.id === todo.id && data ? data : t)));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to update todo.");
+    } finally {
+      setPending(todo.id, false);
+    }
+  };
+
+  const handlePriorityChange = async (todo: Todo, next: Priority) => {
+    if (next === todo.priority) return;
+    setPending(todo.id, true);
+    setError(null);
+    try {
+      const { data, error: updateError } = await supabase
+        .from("todos")
+        .update({ priority: next })
+        .eq("id", todo.id)
+        .select(TODO_COLUMNS)
+        .single();
+      if (updateError) throw new Error(updateError.message);
+      setTodos((prev) => prev.map((t) => (t.id === todo.id && data ? data : t)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update priority.");
     } finally {
       setPending(todo.id, false);
     }
@@ -158,6 +191,22 @@ export default function Home() {
             autoComplete="off"
             disabled={phase === "error"}
           />
+          <label htmlFor="new-todo-priority" className="visually-hidden">
+            Priority
+          </label>
+          <select
+            id="new-todo-priority"
+            name="priority"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as Priority)}
+            disabled={phase === "error"}
+          >
+            {PRIORITIES.map((value) => (
+              <option key={value} value={value}>
+                {PRIORITY_LABELS[value]}
+              </option>
+            ))}
+          </select>
           <button
             type="submit"
             disabled={adding || title.trim().length === 0 || phase !== "ready"}
@@ -199,6 +248,32 @@ export default function Home() {
                   >
                     {todo.title}
                   </label>
+                  <span
+                    className={`priority priority-${todo.priority}`}
+                    data-priority={todo.priority}
+                  >
+                    {PRIORITY_LABELS[todo.priority]}
+                  </span>
+                  <label
+                    htmlFor={`priority-${todo.id}`}
+                    className="visually-hidden"
+                  >
+                    Priority for &ldquo;{todo.title}&rdquo;
+                  </label>
+                  <select
+                    id={`priority-${todo.id}`}
+                    value={todo.priority}
+                    disabled={pending}
+                    onChange={(e) =>
+                      handlePriorityChange(todo, e.target.value as Priority)
+                    }
+                  >
+                    {PRIORITIES.map((value) => (
+                      <option key={value} value={value}>
+                        {PRIORITY_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     type="button"
                     className="delete"

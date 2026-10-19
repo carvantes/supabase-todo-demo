@@ -89,6 +89,10 @@ The `public.todos` table has owner-scoped RLS policies: an authenticated user (i
 anonymous one after sign-in) may only `select`/`insert`/`update`/`delete` their own rows.
 The `anon` role (no session) is granted nothing.
 
+Each todo also has a **priority** (`low`, `medium`, or `high`, defaulting to `medium`),
+enforced by a database check constraint. You pick a priority when adding a todo and can
+change it afterward from an accessible dropdown on each item.
+
 ## Run the app
 
 ```bash

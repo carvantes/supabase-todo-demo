@@ -89,6 +89,10 @@ The `public.todos` table has owner-scoped RLS policies: an authenticated user (i
 anonymous one after sign-in) may only `select`/`insert`/`update`/`delete` their own rows.
 The `anon` role (no session) is granted nothing.
 
+A later migration adds a `created_date date not null default current_date` column
+(distinct from `created_at`). Postgres auto-populates it on insert — the client never
+sends it — and it is rendered per todo with semantic `<time>` markup.
+
 ## Run the app
 
 ```bash

@@ -9,9 +9,11 @@ type Todo = {
   title: string;
   is_complete: boolean;
   created_at: string;
+  created_date: string;
 };
 
-const TODO_COLUMNS = "id, user_id, title, is_complete, created_at";
+const TODO_COLUMNS =
+  "id, user_id, title, is_complete, created_at, created_date";
 
 export default function Home() {
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
@@ -199,6 +201,9 @@ export default function Home() {
                   >
                     {todo.title}
                   </label>
+                  <time className="created-date" dateTime={todo.created_date}>
+                    {todo.created_date}
+                  </time>
                   <button
                     type="button"
                     className="delete"

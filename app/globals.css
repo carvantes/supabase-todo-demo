@@ -50,6 +50,28 @@ h1 {
   font-size: 1rem;
 }
 
+.add-row select,
+.priority-select {
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: Canvas;
+  color: CanvasText;
+  font-size: 1rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 button {
   padding: 0.5rem 0.875rem;
   border: 1px solid var(--border);

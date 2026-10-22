@@ -8,16 +8,20 @@ type Todo = {
   user_id: string;
   title: string;
   is_complete: boolean;
+  priority: number;
   created_at: string;
 };
 
-const TODO_COLUMNS = "id, user_id, title, is_complete, created_at";
+const TODO_COLUMNS = "id, user_id, title, is_complete, priority, created_at";
+
+const PRIORITY_OPTIONS = [1, 2, 3, 4, 5];
 
 export default function Home() {
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [title, setTitle] = useState("");
+  const [priority, setPriority] = useState(3);
   const [adding, setAdding] = useState(false);
   const [pendingIds, setPendingIds] = useState<Record<string, boolean>>({});
 
@@ -86,13 +90,14 @@ export default function Home() {
 
       const { data, error: insertError } = await supabase
         .from("todos")
-        .insert({ title: trimmed, user_id: userId })
+        .insert({ title: trimmed, user_id: userId, priority })
         .select(TODO_COLUMNS)
         .single();
       if (insertError) throw new Error(insertError.message);
 
       setTodos((prev) => (data ? [data, ...prev] : prev));
       setTitle("");
+      setPriority(3);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to add todo.");
     } finally {
@@ -107,6 +112,25 @@ export default function Home() {
       const { data, error: updateError } = await supabase
         .from("todos")
         .update({ is_complete: !todo.is_complete })
+        .eq("id", todo.id)
+        .select(TODO_COLUMNS)
+        .single();
+      if (updateError) throw new Error(updateError.message);
+      setTodos((prev) => prev.map((t) => (t.id === todo.id && data ? data : t)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update todo.");
+    } finally {
+      setPending(todo.id, false);
+    }
+  };
+
+  const handlePriorityChange = async (todo: Todo, nextPriority: number) => {
+    setPending(todo.id, true);
+    setError(null);
+    try {
+      const { data, error: updateError } = await supabase
+        .from("todos")
+        .update({ priority: nextPriority })
         .eq("id", todo.id)
         .select(TODO_COLUMNS)
         .single();
@@ -158,6 +182,22 @@ export default function Home() {
             autoComplete="off"
             disabled={phase === "error"}
           />
+          <label htmlFor="new-todo-priority" className="visually-hidden">
+            Priority
+          </label>
+          <select
+            id="new-todo-priority"
+            name="priority"
+            value={priority}
+            onChange={(e) => setPriority(Number(e.target.value))}
+            disabled={phase === "error"}
+          >
+            {PRIORITY_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                Priority {value}
+              </option>
+            ))}
+          </select>
           <button
             type="submit"
             disabled={adding || title.trim().length === 0 || phase !== "ready"}
@@ -199,6 +239,27 @@ export default function Home() {
                   >
                     {todo.title}
                   </label>
+                  <label
+                    htmlFor={`todo-priority-${todo.id}`}
+                    className="visually-hidden"
+                  >
+                    Priority for &quot;{todo.title}&quot;
+                  </label>
+                  <select
+                    id={`todo-priority-${todo.id}`}
+                    className="priority-select"
+                    value={todo.priority}
+                    disabled={pending}
+                    onChange={(e) =>
+                      handlePriorityChange(todo, Number(e.target.value))
+                    }
+                  >
+                    {PRIORITY_OPTIONS.map((value) => (
+                      <option key={value} value={value}>
+                        Priority {value}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     type="button"
                     className="delete"

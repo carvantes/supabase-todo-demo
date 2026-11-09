@@ -1,4 +1,4 @@
-# Supabase Todo Demo
+# Supabase Todo Demo x
 
 A minimal [Next.js](https://nextjs.org) (App Router, TypeScript) todo app backed by a
 **local Supabase stack**. Users are signed in **anonymously** and can only see and modify
